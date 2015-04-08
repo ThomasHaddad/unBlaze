@@ -2,6 +2,10 @@ div(ng-include='"components/navbar/navbar.html"')
 .container
   .col-md-12
     strong C'est MORT
+    ul
+      li(ng-repeat="group in groups")
+        {{group.name}}
+
 footer.footer
   .container
     p

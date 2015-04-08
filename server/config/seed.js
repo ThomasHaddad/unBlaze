@@ -53,7 +53,7 @@ User.find({}).remove(function() {
             active: true
         }, {
             _creator:user._id,
-            name: "Test Group 1",
+            name: "Test Group 2",
             info: "first group created",
             active: false
         }, function() {

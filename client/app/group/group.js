@@ -4,8 +4,13 @@ angular.module('myappApp')
   .config(function ($stateProvider) {
     $stateProvider
       .state('group', {
-        url: '/',
+        url: '/group',
         templateUrl: 'app/group/group.html',
-        controller: 'GroupCtrl'
+        controller: 'GroupCtrl',
+        resolve:{
+          groups:function(groupFactory){
+            return groupFactory.query().$promise;
+          }
+        }
       });
   });
