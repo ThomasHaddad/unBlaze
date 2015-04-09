@@ -6,10 +6,4 @@ div(ng-include='"components/navbar/navbar.html"')
       li(ng-repeat="group in groups")
         {{group.name}}
 
-footer.footer
-  .container
-    p
-      a(href="http://glyphicons.com") Glyphicons form
-      = " licensed under "
-      a(href="http://osef.com") CC BY 3.0
-
+div(ng-include='"app/group/footer.html"')

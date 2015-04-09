@@ -2,10 +2,11 @@
 
 var _ = require('lodash');
 var Group = require('./group.model');
+var ObjectId = require('mongoose').Types.ObjectId;
 
 // Get list of groups
 exports.index = function(req, res) {
-  Group.find(function (err, groups) {
+  Group.find({_creator : new ObjectId(req.params.userId)},function (err, groups) {
     if(err) { return handleError(res, err); }
     return res.json(200, groups);
   });
