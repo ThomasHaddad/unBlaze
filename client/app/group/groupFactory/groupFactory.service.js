@@ -1,8 +1,6 @@
 'use strict';
 
 angular.module('myappApp')
-  .factory('groupFactory', function ($resource){
-
-    console.log('factory groupFactory');
-    return $resource('/api/groups/:userId/:groupId',{userId:'@userId',groupId:'@Id'});
+  .factory('groupFactory', function ($resource) {
+    return $resource('/api/groups/:groupId',{groupId:'@Id'});
   });

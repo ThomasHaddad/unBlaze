@@ -1,0 +1,10 @@
+div(ng-include='"components/navbar/navbar.html"')
+div.message-container
+  ul
+    li(ng-repeat="m in messages") {{m.content}}
+form.form-show(name="form", ng-submit='addMessage(form)' novalidate)
+  input(type='text', placeholder='Place you text here', name="message" ng-model="form.text" required)
+  br
+  input(type='submit', value="Add Message")
+
+

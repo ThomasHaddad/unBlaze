@@ -1,9 +1,7 @@
 div(ng-include='"components/navbar/navbar.html"')
-.container
-  .col-md-12
-    strong C'est MORT
+.col-md-12
+    p Fucking amazing app
     ul
-      li(ng-repeat="group in groups")
-        {{group.name}}
+     li(ng-repeat='g in group')
+      a(ui-sref="group_show({id: '{{g._id}}' })") {{g.name}}
 
-div(ng-include='"app/group/footer.html"')

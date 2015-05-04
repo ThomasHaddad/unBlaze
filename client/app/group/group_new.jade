@@ -1,11 +1,8 @@
 div(ng-include='"components/navbar/navbar.html"')
-.container
-  .col-md-12
-    strong Add a group
-    form(name="form", ng-submit='groupAdd(form)')
-      input(type="text",placeholder="group name",name="name", ng-model="form.groupName")
-      br
-      textarea(ng-model="form.emails",ng-list=";",placeholder="emails")
-      br
-      input(type="submit",value="ADD")
-div(ng-include='"app/group/footer.html"')
+form.form-new(name="form", ng-submit='groupAdd(form)' novalidate)
+  input(type='text', placeholder='Name of group', name="group" ng-model="form.text" required)
+  input(type='text', placeholder='emails of users you want to invite', name="email", ng-list=";" ng-model="form.email" required)
+  br
+  input(type='submit', value="Add Group")
+
+
