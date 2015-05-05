@@ -5,6 +5,7 @@ var app = require('../../app');
 var request = require('supertest');
 var userFixture = require('../user/user.fixtures');
 var User = require('../user/user.model');
+var async = require('async');
 
 var users;
 describe('GET /api/groups', function() {
@@ -75,10 +76,29 @@ describe('POST /api/groups', function() {
             res.body.emails[0].should.be.equal('t@t.com');
             res.body.emails[1].should.be.equal('test2@test.com');
             res.body.users.length.should.be.equal(2);
-            var user = User.findOne({_id:res.body.users[1]},function(err,user){
-              should.exist(user);
-              done();
-            });
+            async.parallel([
+              function(callback){
+                var user = User.findOne({_id:res.body.users[1]},function(err,user){
+                  if (err) return done(err);
+                  should.exist(user,'user found in database');
+                  should.not.exist(err,'user not found in database');
+                  callback(null,user);
+                });
+              },
+              function(callback){
+                var creator = User.findOne({_id:res.body.users[0]},function(err,user){
+                  if (err) return done(err);
+                  should.exist(user,'creator found in database');
+                  should.not.exist(err,'creator not found in database');
+                  callback(null,user);
+                });
+              }],
+              function(err,result){
+                  var users=result;
+                  done(err);
+
+              }
+            );
           });
       });
   });
