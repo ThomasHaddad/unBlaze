@@ -5,12 +5,12 @@ var mongoose = require('mongoose'),
 var User = require('../user/user.model');
 
 var GroupSchema = new Schema({
-  _creator: {type: Schema.ObjectId, ref:"User"},
+  _creator: {type: Schema.ObjectId, ref:"User", index:true},
   name: String,
   info: {type:String, default:"new chat group"},
   active: {type:Boolean, default:true},
   users:[
-    {type: Schema.ObjectId, ref:"User"}
+    {type: Schema.ObjectId, ref:"User", index:true}
   ],
   emails:[]
 });
