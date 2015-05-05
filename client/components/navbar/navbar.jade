@@ -32,7 +32,7 @@ div.navbar.navbar-default.navbar-static-top(ng-controller='NavbarCtrl')
         li(ng-show='isLoggedIn()')
           p.navbar-text
             user-avatar(email='{{getCurrentUser().email}}',class='profile-image img-circle', size='40')
-            | {{ getCurrentUser().name }}
+            span.username {{ getCurrentUser().name }}
 
         li(ng-show='isLoggedIn()', ng-class='{active: isActive("/settings")}')
           a(href='/settings')
