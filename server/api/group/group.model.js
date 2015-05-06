@@ -21,10 +21,17 @@ GroupSchema
     var self = this;
     User.find().where('email').in(self.emails).exec(function (err, users) {
 
-      self.users = _.union(self.users,users);
       if(self.isNew){
+        self.users = users;
         var index = self.users.indexOf(self._creator);
         if (index === -1) self.users.push(self._creator); // on ajoute le créateur
+      }else if(users.length){
+        // remove duplicate users
+        if(self.users.length){
+          self.users.addToSet(_.pluck(users,'_id'));
+        }else{
+          self.users=users;
+        }
       }
       var usersEmails = _.pluck(users, 'email'); // crée un tableau à partir d'un tableau d'objet avec juste une valeur
       self.emails = _.difference(self.emails, usersEmails); // on supprime tous les utilisateurs qui sont inscrits des mails
