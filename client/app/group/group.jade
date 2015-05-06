@@ -4,4 +4,5 @@ div(ng-include='"components/navbar/navbar.html"')
     ul
      li(ng-repeat='g in group')
       a(ui-sref="group_show({id: '{{g._id}}' })") {{g.name}}
+      a(ui-sref="group_remove({id:'{{g._id}}'})") remove
 

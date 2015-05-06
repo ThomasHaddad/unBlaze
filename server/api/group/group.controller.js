@@ -48,12 +48,14 @@ exports.destroy = function(req, res) {
   Group.findById(req.params.id, function (err, group) {
     if(err) { return handleError(res, err); }
     if(!group) { return res.send(404); }
-    group.remove(function(err) {
+    group.removeUser(req.user,function(err) {
       if(err) { return handleError(res, err); }
       return res.send(204);
     });
   });
 };
+
+
 
 function handleError(res, err) {
   return res.send(500, err);
