@@ -17,14 +17,15 @@ var GroupSchema = new Schema({
 
 GroupSchema
   .pre('save', function (next) {
-    if(!this.isNew) return next();
     this.emails = _.uniq(this.emails); // cas où un mail non inscrit a été rentré plusieurs fois
     var self = this;
-
     User.find().where('email').in(self.emails).exec(function (err, users) {
-      self.users = users;
-      var index = self.users.indexOf(self._creator);
-      if (index === -1) self.users.push(self._creator); // on ajoute le créateur
+
+      self.users = _.union(self.users,users);
+      if(self.isNew){
+        var index = self.users.indexOf(self._creator);
+        if (index === -1) self.users.push(self._creator); // on ajoute le créateur
+      }
       var usersEmails = _.pluck(users, 'email'); // crée un tableau à partir d'un tableau d'objet avec juste une valeur
       self.emails = _.difference(self.emails, usersEmails); // on supprime tous les utilisateurs qui sont inscrits des mails
       next();
@@ -44,6 +45,14 @@ GroupSchema.methods = {
         return callback(err);
       })
     }
+  },
+  addEmails: function(emails,callback){
+    if(!emails) throw(new Error('no emails given'));
+    this.emails = _.union(this.emails,emails);
+    this.save(function(err,res){
+      if(err) throw(err);
+      return callback(err);
+    })
   }
 };
 module.exports = mongoose.model('Group', GroupSchema);

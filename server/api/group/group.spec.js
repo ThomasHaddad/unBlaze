@@ -8,33 +8,45 @@ var User = require('../user/user.model');
 var Group = require('../group/group.model');
 var async = require('async');
 
-var users, token, group;
+var users, token, group, user;
+
+
+function login(done, userIndex) {
+  users = userFixture.getUsers();
+  userIndex = userIndex || 0;
+  user = users[userIndex];
+  request(app)
+    .post('/auth/local')
+    .send({email: users[0].email, password: users[0].password})
+    .expect(200)
+    .end(function (err, res) {
+      if (err) done(err);
+      token = res.body.token;
+      done();
+    })
+}
+
+before(function (done) {
+  userFixture.createUsers(done);
+});
+before(function (done) {
+  login(done);
+});
+
+
 describe('GET /api/groups', function () {
 
 
-  before(function (done) {
-    userFixture.createUsers(done);
-  });
-
   it('should respond with JSON array', function (done) {
-    users = userFixture.getUsers();
     request(app)
-      .post('/auth/local')
-      .send({email: users[0].email, password: users[0].password})
+      .get('/api/groups')
+      .set('Authorization', 'Bearer ' + token)
       .expect(200)
+      .expect('Content-Type', /json/)
       .end(function (err, res) {
-        token = res.body.token;
-        if (err) throw err;
-        request(app)
-          .get('/api/groups')
-          .set('Authorization', 'Bearer ' + res.body.token)
-          .expect(200)
-          .expect('Content-Type', /json/)
-          .end(function (err, res) {
-            if (err) return done(err);
-            res.body.should.be.instanceof(Array);
-            done();
-          });
+        if (err) return done(err);
+        res.body.should.be.instanceof(Array);
+        done();
       });
   });
 
@@ -51,87 +63,66 @@ describe('GET /api/groups', function () {
 });
 
 
-
 describe('POST /api/groups', function () {
 
-
-  before(function (done) {
-    userFixture.createUsers(done);
-  });
-
   it('should respond with JSON object', function (done) {
-    users = userFixture.getUsers();
-    request(app)
-      .post('/auth/local')
-      .send({email: users[0].email, password: users[0].password})
-      .expect(200)
-      .end(function (err, res) {
-        if (err) throw err;
-        request(app)
-          .post('/api/groups')
-          .set('Authorization', 'Bearer ' + res.body.token)
-          .send({name: "test", emails: ['t@t.com', 'test2@test.com']})
-          .expect(201)
-          .expect('Content-Type', /json/)
-          .end(function (err, res) {
-            if (err) return done(err);
-            res.body.should.be.instanceof(Object);
-            res.body.name.should.be.equal('test');
-            res.body.emails[0].should.be.equal('t@t.com');
-            res.body.users.length.should.be.equal(2);
-            async.parallel([
-                function (callback) {
-                  var user = User.findOne({_id: res.body.users[1]}, function (err, user) {
-                    if (err) return done(err);
-                    should.exist(user, 'user found in database');
-                    should.not.exist(err, 'user not found in database');
-                    callback(null, user);
-                  });
-                },
-                function (callback) {
-                  var creator = User.findOne({_id: res.body.users[0]}, function (err, user) {
-                    if (err) return done(err);
-                    should.exist(user, 'creator found in database');
-                    should.not.exist(err, 'creator not found in database');
-                    callback(null, user);
-                  });
-                }],
-              function (err, result) {
-                var users = result; // contient {user, user}
-                group = res.body;
-                done(err);
 
-              }
-            );
-          });
+    request(app)
+      .post('/api/groups')
+      .set('Authorization', 'Bearer ' + token)
+      .send({name: "test", emails: ['t@t.com', 'test2@test.com']})
+      .expect(201)
+      .expect('Content-Type', /json/)
+      .end(function (err, res) {
+        if (err) return done(err);
+        res.body.should.be.instanceof(Object);
+        res.body.name.should.be.equal('test');
+        res.body.emails[0].should.be.equal('t@t.com');
+        res.body.users.length.should.be.equal(2);
+        async.parallel([
+            function (callback) {
+              var user = User.findOne({_id: res.body.users[1]}, function (err, user) {
+                if (err) return done(err);
+                should.exist(user, 'user found in database');
+                should.not.exist(err, 'user not found in database');
+                callback(null, user);
+              });
+            },
+            function (callback) {
+              var creator = User.findOne({_id: res.body.users[0]}, function (err, user) {
+                if (err) return done(err);
+                should.exist(user, 'creator found in database');
+                should.not.exist(err, 'creator not found in database');
+                callback(null, user);
+              });
+            }],
+          function (err, result) {
+            var users = result; // contient {user, user}
+            group = res.body;
+            done(err);
+
+          }
+        );
       });
+
   });
 
   it('should remove duplicate subscriber emails', function (done) {
-    users = userFixture.getUsers();
+
     request(app)
-      .post('/auth/local')
-      .send({email: users[0].email, password: users[0].password})
-      .expect(200)
+      .post('/api/groups')
+      .set('Authorization', 'Bearer ' + token)
+      .send({name: "test", emails: ['toto@toto.com', 'toto@toto.com', 'test2@test.com', 'test2@test.com']})
+      .expect(201)
+      .expect('Content-Type', /json/)
       .end(function (err, res) {
-        if (err) throw err;
-        request(app)
-          .post('/api/groups')
-          .set('Authorization', 'Bearer ' + res.body.token)
-          .send({name: "test", emails: ['toto@toto.com', 'toto@toto.com','test2@test.com', 'test2@test.com']})
-          .expect(201)
-          .expect('Content-Type', /json/)
-          .end(function (err, res) {
-            if (err) return done(err);
-            res.body.emails.length.should.be.equal(1, 'wrong email number');
-            res.body.users.length.should.be.equal(2, 'wrong user number');
-            done();
-          });
+        if (err) return done(err);
+        res.body.emails.length.should.be.equal(1, 'wrong email number');
+        res.body.users.length.should.be.equal(2, 'wrong user number');
+        done();
       });
+
   });
-
-
-
 
 
   it('should respond with 401', function (done) {
@@ -150,30 +141,91 @@ describe('POST /api/groups', function () {
 });
 describe('DELETE /api/groups/group', function () {
   it('should delete user from the group', function (done) {
+
     request(app)
-      .post('/auth/local')
-      .send({email: users[0].email, password: users[0].password})
-      .expect(200)
+      .delete('/api/groups/' + group._id)
+      .set('Authorization', 'Bearer ' + token)
+      .expect(204)
       .end(function (err, res) {
-        request(app)
-          .delete('/api/groups/' + group._id)
-          .set('Authorization', 'Bearer ' + res.body.token)
-          .expect(204)
-          .end(function (err, res) {
-            if (err) return done(err);
-            Group.findOne({_id: group._id}, function (err, group2) {
-              console.log(group2);
-              if (err) return done(err, 'groupe non trouvé');
-              var index = group2.users.indexOf(users[0]._id);
-              index.should.be.equal(-1, 'user still in group');
-            });
-            done();
-          });
+        if (err) return done(err);
+        Group.findOne({_id: group._id}, function (err, group2) {
+          if (err) return done(err, 'groupe non trouvé');
+          var index = group2.users.indexOf(users[0]._id);
+          index.should.be.equal(-1, 'user still in group');
+        });
+        done();
       });
+
+
   });
 
   it('should delete group when there is no user left in it', function (done) {
     done();
   });
 
+
+  describe('POST /api/groups/nnn/emails', function () {
+    it('should respond with 401 if not creator of the group', function (done) {
+      var data = {
+        _creator: users[1]._id,
+        name: 'test',
+        emails: [users[0].email]
+      };
+      Group.create(data, function (err, group) {
+        if (err) done(err);
+        request(app)
+          .post('/api/groups/' + group._id + '/emails')
+          .send({emails: ['tt@t.com']})
+          .set('Authorization', 'Bearer ' + token)
+          .expect(403)
+          .end(function (err, res) {
+            if (err) return done(err);
+            done();
+          })
+      });
+    });
+    it('should respond with error if no emails', function (done) {
+      var data = {
+        _creator: user._id,
+        name: 'test',
+        emails: ['bla@bla.com']
+      };
+      Group.create(data, function (err, group) {
+        if (err) done(err);
+        request(app)
+          .post('/api/groups/' + group._id + '/emails')
+          .set('Authorization', 'Bearer ' + token)
+          .expect(422)
+          .end(function (err, res) {
+            if (err) return done(err);
+            done();
+          })
+      });
+    });
+    it('should respond with no error', function (done) {
+      var data = {
+        _creator: user._id,
+        name: 'test',
+        emails: ['bla@bla.com',users[1].email, 'toto@toto.com']
+      };
+      Group.create(data, function (err, group) {
+        if (err) done(err);
+        request(app)
+          .post('/api/groups/' + group._id + '/emails')
+          .set('Authorization', 'Bearer ' + token)
+          .send({emails:['t@t.com','t@ttt.com','t@tt.com']})
+          .expect(204)
+          .end(function (err, res) {
+            if (err) return done(err);
+            Group.findOne({_id: group._id}, function (err, group) {
+              console.log(group);
+              console.log(users);
+              group.emails.length.should.be.equal(5,'wrong emails number');
+              group.users.length.should.be.equal(2,'wrong users number');
+            });
+            done();
+          })
+      });
+    });
+  });
 });

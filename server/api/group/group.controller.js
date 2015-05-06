@@ -54,6 +54,22 @@ exports.destroy = function(req, res) {
     });
   });
 };
+// Deletes a group from the DB.
+exports.addEmails = function(req, res) {
+  Group.findById(req.params.id, function (err, group) {
+    if(err) { return handleError(res, err); }
+    if(!group) { return res.send(404); }
+    if(group._creator.toString()!== req.user._id.toString()) return res.send(403, new Error('Not Authorized, creator can only add ppl'));
+    try{
+      group.addEmails(req.body.emails,function(err) {
+        if(err) { return handleError(res, err); }
+        return res.send(204);
+      });
+    }catch(Error){
+      return res.send(422,Error.toString());
+    }
+  });
+};
 
 
 
