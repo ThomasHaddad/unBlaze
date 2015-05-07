@@ -1,7 +1,6 @@
 // Generated on 2015-04-07 using generator-angular-fullstack 2.0.13
 'use strict';
 
-var shell = require('shelljs');
 module.exports = function (grunt) {
   var localConfig;
   try {
@@ -9,6 +8,8 @@ module.exports = function (grunt) {
   } catch(e) {
     localConfig = {};
   }
+
+  var shell = require('shelljs');
 
   // Load grunt tasks automatically, when needed
   require('jit-grunt')(grunt, {
@@ -642,11 +643,11 @@ module.exports = function (grunt) {
     'build'
   ]);
 
-  grunt.registerTask('dropdb','drop database',function(){
+  grunt.registerTask('dropdb', 'dropdatabase', function(){
     var config = require('./server/config/environment/'+process.env.NODE_ENV+'.js');
-    if(shell.exec('mongo '+ (config.mongo.uri).replace('mongodb://','')+ ' --eval "db;db.dropDatabase()"').code !== 0){
-      shell.echo('Error: mongo');
+    if(shell.exec('mongo '+(config.mongo.uri).replace('mongodb://', '')+ ' --eval "db;db.dropDatabase()"').code != 0){
+      shell.echo('error: mongo');
       shell.exit(1);
     }
-  });
+  })
 };

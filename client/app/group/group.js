@@ -7,7 +7,7 @@ angular.module('myappApp')
         url: '/group',
         templateUrl: 'app/group/group.html',
         controller: 'GroupCtrl',
-        authenticate:true,
+        authenticate: true,
         resolve:{
           groups:function(groupFactory){
             return groupFactory.query().$promise;
@@ -17,7 +17,7 @@ angular.module('myappApp')
       .state('group_new', {
         url: '/group/new',
         templateUrl: 'app/group/group_new.html',
-        authenticate:true,
+        authenticate: true,
         controller: function($scope, groupFactory, Auth, $state){
           $scope.userId = Auth.getCurrentUser();
           $scope.groupAdd = function(form){
@@ -36,7 +36,7 @@ angular.module('myappApp')
       .state('group_show', {
         url: '/group/:id',
         templateUrl: 'app/group/group_show.html',
-        authenticate:true,
+        authenticate: true,
         controller: function($scope, messageFactory, messages, Auth, $state, socket){
 
           $scope.messages = messages;

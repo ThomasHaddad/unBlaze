@@ -61,9 +61,9 @@ exports.addEmails = function(req, res) {
     if(!group) { return res.send(404); }
     if(group._creator.toString()!== req.user._id.toString()) return res.send(403, new Error('Not Authorized, creator can only add ppl'));
     try{
-      group.addEmails(req.body.emails,function(err,group) {
+      group.addEmails(req.body.emails,function(err) {
         if(err) { return handleError(res, err); }
-        return res.send(204,group);
+        return res.send(204);
       });
     }catch(Error){
       return res.send(422,Error.toString());

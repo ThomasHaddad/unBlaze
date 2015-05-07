@@ -4,29 +4,18 @@ describe('Main View', function() {
   var page;
 
   beforeEach(function() {
-    browser.get('/signup');
+    browser.get('/login');
     page = require('./user.po');
   });
 
-  it('should log in and redirect to homepage', function() {
-    page.name.sendKeys('thomas');
-    page.email.sendKeys('t@t.com');
-    page.password.sendKeys('thomas');
-    page.goButton.click().then(function(){
-      browser.waitForAngular();
-        expect(browser.getLocationAbsUrl()).toBe('/');
-    });
-    browser.get('/logout');
-    browser.get('/login');
-    page.email.sendKeys('t@t.com');
-    page.password.sendKeys('thomas');
-    page.goButton.click().then(function(){
+  it('should login and redirect to home', function() {
+    page.password.sendKeys('admin');
+    page.email.sendKeys('admin@admin.com');
+    //page.name.sendKeys('admin');
+    page.goButton.click().then(function (){
       browser.waitForAngular();
       expect(browser.getLocationAbsUrl()).toBe('/');
-      expect(page.displayedName.getText()).toBe('thomas');
-    });
+      expect(page.userName.getText()).toBe('Test Admin');
+    })
   });
-
-
-
 });
