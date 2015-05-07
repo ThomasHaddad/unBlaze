@@ -8,7 +8,6 @@ var Group = require('./group.model');
 
 exports.register = function(socket) {
   Group.schema.post('save', function (doc) {
-
     onSave(socket, doc);
   });
   Group.schema.post('remove', function (doc) {
@@ -24,8 +23,6 @@ function onSave(socket, doc, cb) {
 
     var user_id = doc.users[i];
     var tag = 'group_'+user_id + ':save';
-
-
     socket.emit(tag, doc);
   }
 

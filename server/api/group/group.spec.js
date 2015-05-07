@@ -18,7 +18,32 @@ var options = {
 
 
 var users, token, group, user;
-
+function connectUser(user,callback){
+  user.client = io.connect('http://localhost:9000',options)
+  .on('connect',function(a,b){
+    return callback(null,user);
+  })
+  .on('connect_error',function(err,b){
+    return callback(err);
+  })
+  .on('connect_timeout',function(err,b){
+    return callback(err);
+  })
+}
+function connectUsers(done){
+  async.parallel([
+    function(callback){
+      connectUser(users[0],callback);
+    },
+    function(callback){
+      connectUser(users[1],callback);
+    }
+  ],
+  function(err,result){
+    //users=result;
+    done(err);
+  });
+}
 
 function login(done, userIndex) {
   users = userFixture.getUsers();
@@ -41,7 +66,9 @@ before(function (done) {
 before(function (done) {
   login(done);
 });
-
+before(function(done){
+  connectUsers(done);
+});
 
 describe('GET /api/groups', function () {
 
@@ -228,8 +255,6 @@ describe('DELETE /api/groups/group', function () {
           .end(function (err, res) {
             if (err) return done(err);
             Group.findOne({_id: group._id}, function (err, group) {
-              console.log(group);
-              console.log(users);
               group.emails.length.should.be.equal(5,'wrong emails number');
               group.users.length.should.be.equal(2,'wrong users number');
             });
@@ -237,10 +262,12 @@ describe('DELETE /api/groups/group', function () {
           })
       });
     });
+
     it('should send new group by socketio to group subscriber users', function (done) {
       // connect to user2 and wait for data
       // crate group for user2
       // user 2 shouls receive group
+
 
       var data = {
         _creator: user._id,
@@ -248,41 +275,36 @@ describe('DELETE /api/groups/group', function () {
         emails: ['bla@bla.com', users[1].email, 'toto@toto.com']
       };
 
-
-      var checkMessage = function(client, tag){
-
-        client.on(tag, function(msg){
-
-          data._creator.should.equal(msg._creator);
-          data.name.should.equal(msg.name);
-          client.disconnect();
-
-        })
-
+      var checkMessage = function(user, callback){
+          var tag = 'group_'+user._id+":save";
+          user.client.on(tag, function(msg){
+            console.log('MESSAGE' + msg);
+            data._creator.toString().should.equal(msg._creator);
+            data.name.should.equal(msg.name);
+            debugger;
+            user.client.disconnect();
+            return callback(null);
+          });
       };
-
-      var client1, client2;
-      var socketURL = 'http://localhost:9000';
-      var socketURL1 = 'group_'+users[0]._id+':save';
-
-      client1 = io.connect(socketURL, options);
-
-      client1.on('connect_error', function(err){
-        console.log('error '+err);
-      });
-
-      client1.on('connect', function(a, b){
-
-        console.log('connected');
-        checkMessage(client1, socketURL1);
-        Group.create(data, function (err, group) {
-          if(err) done(err);
-          console.log('group created');
+      var checkMessages = function(done){
+        async.parallel([
+        function(callback){
+          console.log('first check');
+          checkMessage(users[0],callback);
+        },
+        function(callback){
+          console.log('second check');
+          checkMessage(users[1],callback);
+        }],
+        function(err,result){
+          done(err);
         });
-
-      });
-
-
+      };
+     checkMessages(done);
+      Group.create(data,function(err,group){
+        if(err) done(err);
+        console.log('group created');
+      })
 
 
     });
