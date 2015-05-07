@@ -18,25 +18,21 @@ var GroupSchema = new Schema({
 GroupSchema
   .pre('save', function (next) {
     this.emails = _.uniq(this.emails); // cas où un mail non inscrit a été rentré plusieurs fois
+    console.log('first presave' + this.emails);
     var self = this;
-    User.find().where('email').in(self.emails).exec(function (err, users) {
-
+    User.find().where('email').in(self.emails).where('_id').nin(this.users).exec(function (err, users) {
+      self.users= _.union(self.users,users);
       if(self.isNew){
         self.users = users;
         var index = self.users.indexOf(self._creator);
         if (index === -1) self.users.push(self._creator); // on ajoute le créateur
-      }else if(users.length){
-        // remove duplicate users
-        if(self.users.length){
-          self.users.addToSet(_.pluck(users,'_id'));
-        }else{
-          self.users=users;
         }
-      }
-      var usersEmails = _.pluck(users, 'email'); // crée un tableau à partir d'un tableau d'objet avec juste une valeur
-      self.emails = _.difference(self.emails, usersEmails); // on supprime tous les utilisateurs qui sont inscrits des mails
-      next();
-    })
+        User.find().where('_id').in(self.users).select('email').exec(function(err,users){
+          self.emails = _.difference(self.emails, _.pluck(users,'email')); // on supprime tous les utilisateurs qui sont inscrits des mails
+          console.log('end presave'+self.emails);
+          next();
+        });
+    });
   });
 
 GroupSchema.methods = {
@@ -56,9 +52,9 @@ GroupSchema.methods = {
   addEmails: function(emails,callback){
     if(!emails) throw(new Error('no emails given'));
     this.emails = _.union(this.emails,emails);
-    this.save(function(err,res){
+    this.save(function(err,group){
       if(err) throw(err);
-      return callback(err);
+      return callback(err,group);
     })
   }
 };

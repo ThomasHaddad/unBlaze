@@ -217,13 +217,13 @@ describe('DELETE /api/groups/group', function () {
           .expect(204)
           .end(function (err, res) {
             if (err) return done(err);
-            Group.findOne({_id: group._id}, function (err, group) {
-              console.log(group);
-              console.log(users);
-              group.emails.length.should.be.equal(5,'wrong emails number');
-              group.users.length.should.be.equal(2,'wrong users number');
+            Group.findOne({_id: group._id}, function (err, group2) {
+              if (err) return done(err);
+              console.log('findOne' + group2);
+              group2.emails.length.should.be.equal(5,'wrong emails number');
+              group2.users.length.should.be.equal(2,'wrong users number');
+              done();
             });
-            done();
           })
       });
     });
