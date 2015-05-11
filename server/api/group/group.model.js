@@ -22,6 +22,7 @@ GroupSchema
     User.find().where('email').in(self.emails).where('_id').nin(this.users).exec(function (err, users) {
 
       self.users = _.union(self.users, users);
+      console.log('self.users '+self.users);
 
       if(self.isNew){
         self.users = users;
@@ -39,8 +40,9 @@ GroupSchema
 
       User.find().where('_id').in(self.users).select('email').exec(function(err, users){
 
-        var usersEmails = _.pluck(users, 'email'); // crée un tableau à partir d'un tableau d'objet avec juste une valeur
-        self.emails = _.difference(self.emails, usersEmails); // on supprime tous les utilisateurs qui sont inscrits des mails
+        //var usersEmails = _.pluck(users, 'email'); // crée un tableau à partir d'un tableau d'objet avec juste une valeur
+        self.emails = _.difference(self.emails,  _.pluck(users, 'email')); // on supprime tous les utilisateurs qui sont inscrits des mails
+        console.log('self.emails ' + self.emails);
         next();
 
       });

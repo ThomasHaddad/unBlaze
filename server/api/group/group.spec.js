@@ -8,6 +8,7 @@ var User = require('../user/user.model');
 var Group = require('../group/group.model');
 var async = require('async');
 var io = require('socket.io-client');
+var mongoose = require('mongoose');
 
 var options = {
   transports: ['websocket'],
@@ -16,33 +17,32 @@ var options = {
 };
 
 
-
 var users, token, group, user;
-function connectUser(user,callback){
-  user.client = io.connect('http://localhost:9000',options)
-  .on('connect',function(a,b){
-    return callback(null,user);
-  })
-  .on('connect_error',function(err,b){
-    return callback(err);
-  })
-  .on('connect_timeout',function(err,b){
-    return callback(err);
-  })
+function connectUser(user, callback) {
+  user.client = io.connect('http://localhost:9000', options)
+    .on('connect', function (a, b) {
+      return callback(null, user);
+    })
+    .on('connect_error', function (err, b) {
+      return callback(err);
+    })
+    .on('connect_timeout', function (err, b) {
+      return callback(err);
+    })
 }
-function connectUsers(done){
+function connectUsers(done) {
   async.parallel([
-    function(callback){
-      connectUser(users[0],callback);
-    },
-    function(callback){
-      connectUser(users[1],callback);
-    }
-  ],
-  function(err,result){
-    //users=result;
-    done(err);
-  });
+      function (callback) {
+        connectUser(users[0], callback);
+      },
+      function (callback) {
+        connectUser(users[1], callback);
+      }
+    ],
+    function (err, result) {
+      //users=result;
+      done(err);
+    });
 }
 
 function login(done, userIndex) {
@@ -66,7 +66,7 @@ before(function (done) {
 before(function (done) {
   login(done);
 });
-before(function(done){
+before(function (done) {
   connectUsers(done);
 });
 
@@ -243,20 +243,20 @@ describe('DELETE /api/groups/group', function () {
       var data = {
         _creator: user._id,
         name: 'test',
-        emails: ['bla@bla.com',users[1].email, 'toto@toto.com']
+        emails: ['bla@bla.com', users[1].email, 'toto@toto.com']
       };
       Group.create(data, function (err, group) {
         if (err) done(err);
         request(app)
           .post('/api/groups/' + group._id + '/emails')
           .set('Authorization', 'Bearer ' + token)
-          .send({emails:['t@t.com','t@ttt.com','t@tt.com']})
+          .send({emails: ['t@t.com', 't@ttt.com', 't@tt.com']})
           .expect(204)
           .end(function (err, res) {
             if (err) return done(err);
             Group.findOne({_id: group._id}, function (err, group) {
-              group.emails.length.should.be.equal(5,'wrong emails number');
-              group.users.length.should.be.equal(2,'wrong users number');
+              group.emails.length.should.be.equal(5, 'wrong emails number');
+              group.users.length.should.be.equal(2, 'wrong users number');
             });
             done();
           })
@@ -275,38 +275,71 @@ describe('DELETE /api/groups/group', function () {
         emails: ['bla@bla.com', users[1].email, 'toto@toto.com']
       };
 
-      var checkMessage = function(user, callback){
-          var tag = 'group_'+user._id+":save";
-          user.client.on(tag, function(msg){
-            console.log('MESSAGE' + msg);
-            data._creator.toString().should.equal(msg._creator);
-            data.name.should.equal(msg.name);
-            debugger;
-            user.client.disconnect();
-            return callback(null);
-          });
-      };
-      var checkMessages = function(done){
-        async.parallel([
-        function(callback){
-          console.log('first check');
-          checkMessage(users[0],callback);
-        },
-        function(callback){
-          console.log('second check');
-          checkMessage(users[1],callback);
-        }],
-        function(err,result){
-          done(err);
+      var checkMessage = function (user, callback) {
+        var tag = 'group_' + user._id + ":save";
+        user.client.on(tag, function (msg) {
+          console.log('MESSAGE' + msg);
+          data._creator.toString().should.equal(msg._creator);
+          data.name.should.equal(msg.name);
+          debugger;
+          user.client.disconnect();
+          return callback(null);
         });
       };
-     checkMessages(done);
-      Group.create(data,function(err,group){
-        if(err) done(err);
+      var checkMessages = function (done) {
+        async.parallel([
+            function (callback) {
+              console.log('first check');
+              checkMessage(users[0], callback);
+            },
+            function (callback) {
+              console.log('second check');
+              checkMessage(users[1], callback);
+            }],
+          function (err, result) {
+            done(err);
+          });
+      };
+      checkMessages(done);
+      Group.create(data, function (err, group) {
+        if (err) done(err);
         console.log('group created');
       })
-
-
     });
+  });
+
+});
+before(function (done) {
+  User.findOne({email: 'toto@toto.com'}, function (err, user) {
+    if (err) done(err);
+    if (!user) return done();
+    user.remove(function (err, user) {
+      done(err);
+    });
+  });
+});
+describe('User.create', function () {
+  var newMail = "toto@toto.com"
+  it('should remove automatically add user in groups where his email is present', function (done) {
+    var data = {
+      _creator: user._id,
+      name: 'test',
+      emails: ['bla@bla.com', users[1].email, newMail]
+    };
+    Group.create(data, function (err, group) {
+      console.log('group created' + group);
+      if (err) done(err);
+      userFixture.createUser('toto@toto.com', function (err, user) {
+        console.log('user mongoose objectId ' + mongoose.Types.ObjectId(user._id));
+        console.log(group);
+        Group.findOne({_id: group._id, users: mongoose.Types.ObjectId(user._id)}).exec(function (err, group) {
+          if (err) return done(err);
+          (!!group).should.be.equal(true, 'User not added in group ');
+          group.emails.indexOf(newMail).should.be.equal(-1, 'Email not deleted');
+          done();
+        })
+      });
+    });
+
   });
 });
